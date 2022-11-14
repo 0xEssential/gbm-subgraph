@@ -1,4 +1,4 @@
-import { Address, BigInt, log } from "@graphprotocol/graph-ts";
+import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 import {
     Contract,
     Auction_BidPlaced,
@@ -7,16 +7,15 @@ import {
     Auction_IncentivePaid,
     Auction_Initialized,
     Auction_StartTimeUpdated,
+    // Auction_ItemClaimed,
+    // AuctionCancelled,
+    Assigned,
     Contract_BiddingAllowed,
-    Auction_ItemClaimed,
-    AuctionCancelled,
 } from "../generated/Contract/Contract";
 import {
     Auction,
-    Bid,
     Statistic,
     Incentive,
-    User,
     Contract as ContractEntity,
 } from "../generated/schema";
 import { getOrCreateBid, getOrCreateUser } from "./helper";
@@ -187,33 +186,28 @@ export function handleAuction_Initialized(event: Auction_Initialized): void {
     let contract = Contract.bind(event.address);
 
     let result = contract.try_getAuctionInfo(event.params._auctionID);
-    let resultHammerTime = contract.try_getAuctionHammerTimeDuration();
 
     // @todo: seller, createdAt, startsAt, endsAt, claimAt,
     //  contractId quantity, presetId, cancelled, ercType, bids objects
-    if (!result.reverted && !resultHammerTime.reverted) {
+    if (!result.reverted) {
         let auctionInfo = result.value;
 
-        auctionInfo.auctionDebt;
-        auctionInfo.biddingAllowed;
-        auction.claimed = auctionInfo.claimed;
+        auction.claimed = false;
         
-        let presets = auctionInfo.presets;
-        auction.bidDecimals = presets.bidDecimals;
-        auction.bidMultiplier = presets.bidMultiplier;
-        auction.hammerTimeDuration = resultHammerTime.value;
-        auction.incMax = presets.incMax;
-        auction.incMin = presets.incMin;
-        auction.stepMin = presets.stepMin;
+        auction.bidDecimals = auctionInfo.bidDecimals;
+        auction.bidMultiplier = auctionInfo.bidMultiplier;
+        auction.hammerTimeDuration = auctionInfo.hammerTime;
+        auction.incMax = auctionInfo.incMax;
+        auction.incMin = auctionInfo.incMin;
+        auction.stepMin = auctionInfo.stepMin;
         auction.seller = auctionInfo.owner;
         auction.createdAt = event.block.timestamp;
-        auction.quantity = event.params._tokenAmount;
         auction.startsAt = event.block.timestamp;
         auction.dueIncentives = auctionInfo.dueIncentives;
 
-        auction.startsAt = auctionInfo.info.startTime;
-        auction.endsAt = auctionInfo.info.endTime;
-        auction.endsAtOriginal = auctionInfo.info.endTime;
+        auction.startsAt = auctionInfo.startTime;
+        auction.endsAt = auctionInfo.endTime;
+        auction.endsAtOriginal = auctionInfo.endTime;
 
         // auction.claimAt =
         auction.highestBidder = auctionInfo.highestBidder;
@@ -245,7 +239,7 @@ export function handleAuction_StartTimeUpdated(
         return;
     }
     entity.startsAt = event.params._startTime;
-    entity.endsAt = event.params._endTime;
+    // entity.endsAt = event.params._endTime;
     entity.endsAtOriginal = entity.endsAt;
     entity.save();
 }
@@ -261,11 +255,17 @@ export function handleContract_BiddingAllowed(
     entity.save();
 }
 
-export function handleAuction_ItemClaimed(event: Auction_ItemClaimed): void {
-    let auction = Auction.load(event.params._auctionID.toString());
+export function handleAuction_ItemClaimed(event: Assigned): void {
+    let contract = Contract.bind(event.address)
+    let _auctionID = contract.getAuctionID(
+        new Address(BigInt.fromString("0x67b6aE8F05A6af6D0ECbc89222f94279bAF6Dfa2").toI32()),
+        event.params.tokenId
+    )
+
+    let auction = Auction.load(_auctionID.toString());
     if (!auction) {
         log.warning("auction with id {} not found", [
-            event.params._auctionID.toString(),
+            _auctionID.toString(),
         ]);
         return;
     }
@@ -289,14 +289,14 @@ export function handleAuction_ItemClaimed(event: Auction_ItemClaimed): void {
     auction.save();
 }
 
-export function handleAuctionCancelled(event: AuctionCancelled): void {
-    let auction = Auction.load(event.params._auctionId.toString());
-    if (!auction) {
-        log.warning("auction with id {} not found", [
-            event.params._auctionId.toString(),
-        ]);
-        return;
-    }
-    auction.cancelled = true;
-    auction.save();
-}
+// export function handleAuctionCancelled(event: AuctionCancelled): void {
+//     let auction = Auction.load(event.params._auctionId.toString());
+//     if (!auction) {
+//         log.warning("auction with id {} not found", [
+//             event.params._auctionId.toString(),
+//         ]);
+//         return;
+//     }
+//     auction.cancelled = true;
+//     auction.save();
+// }

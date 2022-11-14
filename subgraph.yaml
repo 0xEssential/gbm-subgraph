@@ -6,9 +6,9 @@ dataSources:
     name: Contract
     network: mumbai
     source:
-      address: "0xd6f59c1be030af4a9b7fbf44e01bd2f2a0d54488"
+      address: "0x2400BA470e11853238802ECABAc5b5eccFe684C6"
       abi: Contract
-      startBlock: 28951974
+      startBlock: 29136859
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -27,8 +27,8 @@ dataSources:
         - name: Contract
           file: ./abis/abi_gbm.json
       eventHandlers:
-        - event: AuctionCancelled(indexed uint256,uint256)
-          handler: handleAuctionCancelled
+        # - event: AuctionCancelled(indexed uint256,uint256)
+        #   handler: handleAuctionCancelled
         - event: Auction_BidPlaced(indexed uint256,indexed address,uint256)
           handler: handleAuction_BidPlaced
         - event: Auction_BidRemoved(indexed uint256,indexed address,uint256)
@@ -37,11 +37,11 @@ dataSources:
           handler: handleAuction_EndTimeUpdated
         - event: Auction_IncentivePaid(indexed uint256,indexed address,uint256)
           handler: handleAuction_IncentivePaid
-        - event: Auction_Initialized(indexed uint256,indexed uint256,indexed uint256,address,bytes4,uint256)
+        - event: Auction_Initialized(indexed uint256,indexed uint256,indexed address,bytes4)
           handler: handleAuction_Initialized
-        - event: Auction_ItemClaimed(indexed uint256)
+        - event: Assigned(indexed address,indexed uint256)
           handler: handleAuction_ItemClaimed
-        - event: Auction_StartTimeUpdated(indexed uint256,uint256,uint256)
+        - event: Auction_StartTimeUpdated(indexed uint256,uint256)
           handler: handleAuction_StartTimeUpdated
         - event: Contract_BiddingAllowed(indexed address,bool)
           handler: handleContract_BiddingAllowed
